@@ -115,14 +115,14 @@ func getMaxMinHeight() (float64, float64) {
 // getColor
 func getColor(height, maxHeight, minHeight float64) string {
 	if !isFinite(height) || !isFinite(maxHeight) || !isFinite(minHeight) {
-		return "#0000FF"
+		return "#00FF00"
 	}
 
 	// Calculate the color base on the height
 	n := int((height - minHeight) / (maxHeight - minHeight) * 255)
 	rr := fmt.Sprintf("%02x", n)
-	gg := "00"
-	bb := fmt.Sprintf("%02x", 255-n)
+	bb := "00"
+	gg := fmt.Sprintf("%02x", 255-n)
 
 	return fmt.Sprintf("#%s%s%s", rr, gg, bb)
 }
