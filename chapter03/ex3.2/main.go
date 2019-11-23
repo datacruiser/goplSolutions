@@ -7,16 +7,18 @@
 // Surface computes an SVG rendering of a 3-D surface function.
 
 /*
-Exercise 3.1: If the function f returns a non-ﬁnite float64 value,
-the SVG ﬁle will contain invalid <polygon> elements (although many SVG renderers handle this gracefully).
-Modify the program to skip invalid polygons.
+Exercise 3.2: Experiment with visualizations of other functions from the math package.
+Can you produce an egg box, moguls, or a saddle?
 */
 package main
 
 import (
 	"fmt"
 	"math"
+	"os"
 )
+
+type zFunc func(x, y float64) float64
 
 const (
 	width, height = 600, 320            // canvas size in pixels
@@ -30,15 +32,33 @@ const (
 var sin30, cos30 = math.Sin(angle), math.Cos(angle) // sin(30°), cos(30°)
 
 func main() {
+
+	usage := "usage: ex3.2 saddle|eggbox"
+
+	if len(os.Args) < 2 {
+		fmt.Fprintln(os.Stderr, usage)
+		os.Exit(1)
+	}
+
+	var f zFunc
+	switch os.Args[1] {
+	case "saddle":
+		f = saddle
+	case "eggbox":
+		f = eggbox
+	default:
+		f = f
+	}
+
 	fmt.Printf("<svg xmlns='http://www.w3.org/2000/svg' "+
 		"style='stroke: grey; fill: white; stroke-width: 0.7' "+
 		"width='%d' height='%d'>", width, height)
 	for i := 0; i < cells; i++ {
 		for j := 0; j < cells; j++ {
-			ax, ay := corner(i+1, j)
-			bx, by := corner(i, j)
-			cx, cy := corner(i, j+1)
-			dx, dy := corner(i+1, j+1)
+			ax, ay := corner(i+1, j, f)
+			bx, by := corner(i, j, f)
+			cx, cy := corner(i, j+1, f)
+			dx, dy := corner(i+1, j+1, f)
 			if math.IsNaN(ax) || math.IsNaN(ay) || math.IsNaN(bx) || math.IsNaN(by) || math.IsNaN(cx) || math.IsNaN(cy) || math.IsNaN(dx) || math.IsNaN(dy) {
 				continue
 			}
@@ -49,12 +69,13 @@ func main() {
 	fmt.Println("</svg>")
 }
 
-func corner(i, j int) (float64, float64) {
+func corner(i, j int, f zFunc) (float64, float64) {
 	// Find point (x,y) at corner of cell (i,j).
 	x := xyrange * (float64(i)/cells - 0.5)
 	y := xyrange * (float64(j)/cells - 0.5)
 
 	// Compute surface height z.
+	// can replace f to eggbox or saddle
 	z := f(x, y)
 
 	// Project (x,y,z) isometrically onto 2-D SVG canvas (sx,sy).
@@ -64,12 +85,26 @@ func corner(i, j int) (float64, float64) {
 }
 
 func f(x, y float64) float64 {
-	r := math.Hypot(x, y) // distance from (0,0)
-	if r != 0 {
-		return math.Sin(r) / r
-	} else {
-		return 0
-	}
+	segment := 5
+	x = math.Abs(float64(int(x*10.0)%(segment*10))) / 10.0
+	y = math.Abs(float64(int(y*10.0)%(segment*10))) / 10.0
+	half := float64(segment) / 2.0
+
+	r := (x-half)*(x-half) + (y-half)*(y-half)
+	return r / 20.0
+
+}
+
+func eggbox(x, y float64) float64 {
+	return 0.2 * (math.Cos(x) + math.Cos(y))
+}
+
+func saddle(x, y float64) float64 {
+	a := 25.0
+	b := 17.0
+	a2 := a * a
+	b2 := b * b
+	return y*y/a2 - x*x/b2
 }
 
 //!-

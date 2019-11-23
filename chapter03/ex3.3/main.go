@@ -7,9 +7,8 @@
 // Surface computes an SVG rendering of a 3-D surface function.
 
 /*
-Exercise 3.1: If the function f returns a non-ﬁnite float64 value,
-the SVG ﬁle will contain invalid <polygon> elements (although many SVG renderers handle this gracefully).
-Modify the program to skip invalid polygons.
+Exercise 3.3: Color each polygon based on its height,
+so that the peaks are colored red (#ff0000) and the valleys blue (#0000ff).
 */
 package main
 
@@ -33,17 +32,22 @@ func main() {
 	fmt.Printf("<svg xmlns='http://www.w3.org/2000/svg' "+
 		"style='stroke: grey; fill: white; stroke-width: 0.7' "+
 		"width='%d' height='%d'>", width, height)
+
+	maxHeight, minHeight := getMaxMinHeight()
+
 	for i := 0; i < cells; i++ {
 		for j := 0; j < cells; j++ {
 			ax, ay := corner(i+1, j)
 			bx, by := corner(i, j)
 			cx, cy := corner(i, j+1)
 			dx, dy := corner(i+1, j+1)
+			color := getColor(getHeight(i, j), maxHeight, minHeight)
+
 			if math.IsNaN(ax) || math.IsNaN(ay) || math.IsNaN(bx) || math.IsNaN(by) || math.IsNaN(cx) || math.IsNaN(cy) || math.IsNaN(dx) || math.IsNaN(dy) {
 				continue
 			}
-			fmt.Printf("<polygon points='%g,%g %g,%g %g,%g %g,%g'/>\n",
-				ax, ay, bx, by, cx, cy, dx, dy)
+			fmt.Printf("<style = 'fill:%s' polygon points='%g,%g %g,%g %g,%g %g,%g'/>\n",
+				color, ax, ay, bx, by, cx, cy, dx, dy)
 		}
 	}
 	fmt.Println("</svg>")
@@ -70,6 +74,66 @@ func f(x, y float64) float64 {
 	} else {
 		return 0
 	}
+}
+
+func isFinite(f float64) bool {
+	if math.IsInf(f, 0) {
+		return false
+	}
+	if math.IsNaN(f) {
+		return false
+	}
+	return true
+}
+
+// getHeight
+
+func getHeight(i, j int) float64 {
+	// Find point(x, y) at corner of cell (i, j).
+	x := xyrange * (float64(i)/cells - 0.5)
+	y := xyrange * (float64(j)/cells - 0.5)
+
+	// Compute surface height z
+	return f(x, y)
+
+}
+
+// getMaxMinHeight
+func getMaxMinHeight() (float64, float64) {
+	maxHeight := math.NaN()
+	minHeight := math.NaN()
+
+	for i := 0; i < cells; i++ {
+		for j := 0; j < cells; j++ {
+			z := getHeight(i, j)
+
+			if isFinite(z) {
+				if math.IsNaN(maxHeight) || maxHeight < z {
+					maxHeight = z
+				}
+				if math.IsNaN(minHeight) || minHeight > z {
+					minHeight = z
+				}
+			}
+		}
+	}
+
+	return maxHeight, minHeight
+}
+
+// getColor
+func getColor(height, maxHeight, minHeight float64) string {
+	if !isFinite(height) || !isFinite(maxHeight) || !isFinite(minHeight) {
+		return "#0000FF"
+	}
+
+	// Calculate the color base on the height
+	n := int((height - minHeight) / (maxHeight - minHeight) * 255)
+	rr := fmt.Sprintf("%02x", n)
+	gg := "00"
+	bb := fmt.Sprintf("%02x", 255-n)
+
+	return fmt.Sprintf("#%s%s%s", rr, gg, bb)
 }
 
 //!-
