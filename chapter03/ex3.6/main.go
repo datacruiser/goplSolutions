@@ -65,12 +65,13 @@ func main() {
 
 func mandelbrot(z complex128) color.Color {
 	const iterations = 200
+	const contrast = 15
 
 	var v complex128
-	for n := 0; n < iterations; n++ {
+	for n := uint8(0); n < iterations; n++ {
 		v = v*v + z
 		if cmplx.Abs(v) > 2 {
-			return palette[n%len(palette)]
+			return color.Gray{255 - contrast*n}
 		}
 	}
 	return color.Black
@@ -118,8 +119,8 @@ func GetAverageColor(colors []color.Color) color.Color {
 
 	var r, g, b, a float64
 
-	for _, color := range colors {
-		dr, dg, db, da := color.RGBA()
+	for _, cl := range colors {
+		dr, dg, db, da := cl.RGBA()
 		r += float64(dr>>8) / float64(len(colors))
 		g += float64(dg>>8) / float64(len(colors))
 		b += float64(db>>8) / float64(len(colors))
