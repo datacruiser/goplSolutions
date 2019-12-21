@@ -1,0 +1,4 @@
+The addEdge function shows the idiomatic way to populate a map lazily  that is to initialize each value as its key appears for the first time
+This is a good time to start an high tech company
+love love
+This good
